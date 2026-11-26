@@ -1,14 +1,22 @@
-FROM alpine:3.19 AS downloader
+FROM node:22.14-alpine AS frontend
 
-WORKDIR /app
+WORKDIR /frontend
 
 RUN <<EOS
 set -ex
-apk add unzip
-wget https://github.com/QingdaoU/OnlineJudgeFE/releases/download/oj_2.7.5/dist.zip
-unzip dist.zip
-rm -f dist.zip
+apk add --no-cache unzip
+wget -O source.zip https://codeload.github.com/QingdaoU/OnlineJudgeFE/zip/refs/tags/oj_2.7.5
+echo '22bf2094b175f75e76dda35a89c96004ced36866aa4a62c2b0758a5f3d81870b  source.zip' | sha256sum -c -
+unzip -q source.zip
+rm -f source.zip
 EOS
+
+WORKDIR /frontend/OnlineJudgeFE-oj_2.7.5
+RUN npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
+COPY frontend/ /overrides/
+RUN node /overrides/prepare.js /frontend/OnlineJudgeFE-oj_2.7.5
+ENV NODE_OPTIONS=--openssl-legacy-provider
+RUN NODE_ENV=production npm run build:dll && npm run build
 
 FROM python:3.12-alpine
 ARG TARGETARCH
@@ -30,7 +38,7 @@ apk del gcc libc-dev python3-dev libpq-dev libjpeg-turbo-dev zlib-dev freetype-d
 EOS
 
 COPY ./ /app/
-COPY --from=downloader --link /app/dist/ /app/dist/
+COPY --from=frontend --link /frontend/OnlineJudgeFE-oj_2.7.5/dist/ /app/dist/
 RUN chmod -R u=rwX,go=rX ./ && chmod +x ./deploy/entrypoint.sh
 
 HEALTHCHECK --interval=5s CMD [ "/usr/local/bin/python3", "/app/deploy/health_check.py" ]

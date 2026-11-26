@@ -30,6 +30,8 @@
 
 ## 安装
 
+本项目新增了原 OJ 导航栏中的“错题本”。使用修改后的代码构建并更新镜像后生效，详见 [错题本使用与部署](docs/错题本使用与部署.md)。
+
 请根据此进行安装:  [https://github.com/QingdaoU/OnlineJudgeDeploy/tree/2.0](https://github.com/QingdaoU/OnlineJudgeDeploy/tree/2.0)
 
 ## 文档
